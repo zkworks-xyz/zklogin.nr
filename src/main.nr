@@ -1,5 +1,7 @@
 use dep::std::hash::poseidon;
 
+mod utils;
+
 struct JwtToken {
     sub_name_packed: [Field; 2],
     sub_value_packed: [Field; 4],
