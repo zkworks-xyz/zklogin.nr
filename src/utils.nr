@@ -20,19 +20,16 @@ fn str_padded<N, M>(input: str<N>) -> [Field; M] {
 fn chunk_and_covert_array<N, M>(input: [Field; N], chunk_size: u8) -> [Field; M] {
     let mut chunk_position = 0;
     let mut chunk = 0;
-    let mut multiplier = 1;
     let mut result = [0; M];
     for i in 0..input.len() {
         if ((i as u8) % chunk_size == 0) {
             chunk_position = 0;
             chunk += 1;
-            multiplier = 1;
         } else {
             chunk_position += 1;
-            multiplier *= 256;
         }
         let ii = input.len() - 1 - i;
-        result[3 - chunk] += input[ii] * multiplier;
+        result[M - chunk] += input[ii] * 2.pow_32(chunk_position * 8);
     }
     result
 }
