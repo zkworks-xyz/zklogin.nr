@@ -2,14 +2,29 @@ mod utils;
 
 use dep::std::hash::poseidon;
 use utils::poseidon;
+use utils::str_padded;
+use utils::chunk_and_covert_array;
+use dep::std;
 
-struct JwtToken<N, K, M> {
+global MAX_KEY_CLAIM_NAME_LENGTH = 32;
+global MAX_KEY_CLAIM_VALUE_LENGTH = 115;
+global MAX_AUD_VALUE_LENGTH = 145;
+global PACK_WIDTH = 248; // smallest multiple of 8 less than log(p)
+global CHUNK_SIZE = 31; // PACK_WIDTH / 8;
+
+struct JwtTokenPacked<N, K, M> {
     sub_name_packed: [Field; N],
     sub_value_packed: [Field; K],
     aud_value_packed: [Field; M]
 }
 
-fn main<N, K, M>(jwt: JwtToken<N, K, M>, salt: Field, addr_seed: pub Field) {
+struct JwtToken<N, K, M> {
+    sub_name: str<N>,
+    sub_value: str<K>,
+    aud_value: str<M>
+}
+
+fn main<N, K, M>(jwt: JwtTokenPacked<N, K, M>, salt: Field, addr_seed: pub Field) {
     let calculated_addr_seed = calculate_addr_seed(
         jwt.sub_name_packed,
         jwt.sub_value_packed,
@@ -33,15 +48,51 @@ fn calculate_addr_seed<N, K, M>(
         ])
     }
 
+fn convert_jw_token<N, K, M>(raw: JwtToken<N, K, M>) -> JwtTokenPacked<
+    (MAX_KEY_CLAIM_NAME_LENGTH / CHUNK_SIZE) + 1,
+    (MAX_KEY_CLAIM_VALUE_LENGTH / CHUNK_SIZE) + 1,
+    (MAX_AUD_VALUE_LENGTH / CHUNK_SIZE) + 1
+> {
+    let sub_name_padded: [Field; MAX_KEY_CLAIM_NAME_LENGTH] = str_padded(raw.sub_name);
+    let sub_name_packed: [Field; (MAX_KEY_CLAIM_NAME_LENGTH / CHUNK_SIZE) + 1] = chunk_and_covert_array(sub_name_padded, CHUNK_SIZE);
+
+    let sub_value_padded: [Field; MAX_KEY_CLAIM_VALUE_LENGTH] = str_padded(raw.sub_value);
+    let sub_value_packed: [Field; (MAX_KEY_CLAIM_VALUE_LENGTH / CHUNK_SIZE) + 1] = chunk_and_covert_array(sub_value_padded, CHUNK_SIZE);
+
+    let aud_value_padded: [Field; MAX_AUD_VALUE_LENGTH] = str_padded(raw.aud_value);
+    let aud_value_packed: [Field; (MAX_AUD_VALUE_LENGTH / CHUNK_SIZE) + 1] = chunk_and_covert_array(aud_value_padded, CHUNK_SIZE);
+
+    JwtTokenPacked {
+        sub_name_packed,
+        sub_value_packed,
+        aud_value_packed
+    }
+}
+
 #[test]
 fn test_calculate_addr_seed() {
     let addr_seed = calculate_addr_seed(
-        [115,207397477721056441812414413661424614846155824613720115982633852925168844800],
-        [18406442779074703367672942673566636046554636526551040,0,0,0],
-        [174474884870278626934955327495491464864294338822144,0,0,0,0],
+        [115, 207397477721056441812414413661424614846155824613720115982633852925168844800], // "sub"
+        [18406442779074703367672942673566636046554636526551040, 0, 0, 0], // "123"
+        [174474884870278626934955327495491464864294338822144, 0, 0, 0, 0], // "wallet-id"
         0
     );
     let expected_addr_seed = 0x0d758800064ac1b906a80b2840eb3c31cb5b7e4cbdb2a87a0d2b805179243fe0;
 
     assert(expected_addr_seed == addr_seed);
+}
+
+#[test]
+fn test_pack_jwt() {
+    let jwt_raw = JwtToken {
+        sub_name: "sub",
+        sub_value: "123",
+        aud_value: "wallet-id"
+    };
+
+    let result = convert_jw_token(jwt_raw);
+
+    assert([115, 207397477721056441812414413661424614846155824613720115982633852925168844800] == result.sub_name_packed);
+    assert([18406442779074703367672942673566636046554636526551040, 0, 0, 0] == result.sub_value_packed);
+    assert([174474884870278626934955327495491464864294338822144, 0, 0, 0, 0]  == result.aud_value_packed);
 }
