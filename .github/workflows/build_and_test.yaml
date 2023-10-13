@@ -20,5 +20,7 @@ jobs:
     - name: Run tests
       run: nargo test
 
-    - name: Run verify
-      run: nargo verify
+    - name: Run prove and verify
+      run: |
+        nargo prove
+        nargo verify
