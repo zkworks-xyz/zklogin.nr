@@ -1,14 +1,15 @@
-use dep::std::hash::poseidon;
-
 mod utils;
 
-struct JwtToken {
-    sub_name_packed: [Field; 2],
-    sub_value_packed: [Field; 4],
-    aud_value_packed: [Field; 5]
+use dep::std::hash::poseidon;
+use utils::poseidon;
+
+struct JwtToken<N, K, M> {
+    sub_name_packed: [Field; N],
+    sub_value_packed: [Field; K],
+    aud_value_packed: [Field; M]
 }
 
-fn main(jwt: JwtToken, salt: Field, addr_seed: pub Field) {
+fn main<N, K, M>(jwt: JwtToken<N, K, M>, salt: Field, addr_seed: pub Field) {
     let calculated_addr_seed = calculate_addr_seed(
         jwt.sub_name_packed,
         jwt.sub_value_packed,
@@ -18,17 +19,17 @@ fn main(jwt: JwtToken, salt: Field, addr_seed: pub Field) {
     assert(addr_seed == calculated_addr_seed);
 }
 
-fn calculate_addr_seed(
-    jwt_key_claim_name: [Field; 2], // key claim name from jwt: "sub"
-    jwt_key_claim_value: [Field; 4], // subject key value - represent user id
-    aud: [Field; 5], // audience key value - represent wallet id
+fn calculate_addr_seed<N, K, M>(
+    jwt_key_claim_name: [Field; N], // key claim name from jwt: "sub"
+    jwt_key_claim_value: [Field; K], // subject key value - represent user id
+    aud: [Field; M], // audience key value - represent wallet id
     salt: Field
     ) -> Field {
-        poseidon::bn254::hash_4([
-            poseidon::bn254::hash_2(jwt_key_claim_name),
-            poseidon::bn254::hash_4(jwt_key_claim_value),
-            poseidon::bn254::hash_5(aud),
-            poseidon::bn254::hash_1([salt]),
+        poseidon([
+            poseidon(jwt_key_claim_name),
+            poseidon(jwt_key_claim_value),
+            poseidon(aud),
+            poseidon([salt]),
         ])
     }
 
