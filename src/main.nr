@@ -1,16 +1,12 @@
 mod utils;
+mod const;
 
+use dep::std;
 use dep::std::hash::poseidon;
+use const::{MAX_KEY_CLAIM_NAME_LENGTH, MAX_KEY_CLAIM_VALUE_LENGTH, MAX_AUD_VALUE_LENGTH, CHUNK_SIZE, PACK_WIDTH};
 use utils::poseidon;
 use utils::str_padded;
 use utils::chunk_and_covert_array;
-use dep::std;
-
-global MAX_KEY_CLAIM_NAME_LENGTH = 32;
-global MAX_KEY_CLAIM_VALUE_LENGTH = 115;
-global MAX_AUD_VALUE_LENGTH = 145;
-global PACK_WIDTH = 248; // smallest multiple of 8 less than log(p)
-global CHUNK_SIZE = 31; // PACK_WIDTH / 8;
 
 struct JwtTokenPacked<N, K, M> {
     sub_name_packed: [Field; N],
