@@ -1,4 +1,5 @@
 use dep::std;
+use dep::std::hash::poseidon;
 
 fn str_to_field<N>(input: str<N>) -> Field {
     let input_as_field: [Field; N] = input.as_bytes().map(|x:u8| x as Field);
