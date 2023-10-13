@@ -24,11 +24,13 @@ struct JwtToken<N, K, M> {
     aud_value: str<M>
 }
 
-fn main<N, K, M>(jwt: JwtTokenPacked<N, K, M>, salt: Field, addr_seed: pub Field) {
+fn main(jwt: JwtToken<3, 3, 9>, salt: Field, addr_seed: pub Field) {
+    let jwt_packed = convert_jw_token(jwt);
+
     let calculated_addr_seed = calculate_addr_seed(
-        jwt.sub_name_packed,
-        jwt.sub_value_packed,
-        jwt.aud_value_packed,
+        jwt_packed.sub_name_packed,
+        jwt_packed.sub_value_packed,
+        jwt_packed.aud_value_packed,
         salt
     );
     assert(addr_seed == calculated_addr_seed);
