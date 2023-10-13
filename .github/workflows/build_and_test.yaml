@@ -19,3 +19,6 @@ jobs:
 
     - name: Run tests
       run: nargo test
+
+    - name: Run verify
+      run: nargo verify
