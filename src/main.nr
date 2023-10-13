@@ -1,7 +1,19 @@
 use dep::std::hash::poseidon;
 
-fn main(x : Field, y : pub Field) {
-    assert(x != y);
+struct JwtToken {
+    sub_name_packed: [Field; 2],
+    sub_value_packed: [Field; 4],
+    aud_value_packed: [Field; 5]
+}
+
+fn main(jwt: JwtToken, salt: Field, addr_seed: pub Field) {
+    let calculated_addr_seed = calculate_addr_seed(
+        jwt.sub_name_packed,
+        jwt.sub_value_packed,
+        jwt.aud_value_packed,
+        salt
+    );
+    assert(addr_seed == calculated_addr_seed);
 }
 
 fn calculate_addr_seed(
